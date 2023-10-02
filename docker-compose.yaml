@@ -1,0 +1,31 @@
+version: '3.9'
+
+services:
+  db:
+    container_name: django_db
+    image: postgres
+    volumes:
+    - ./db/data:/var/lib/postgresql/data
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  web:
+    build: .
+    container_name: django_web
+    command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    # bash to go inside pgsql: 
+    # $ docker exec -it django_db psql -U myproject_user -d myproject_db -W
+    # password: myproject_password 
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
